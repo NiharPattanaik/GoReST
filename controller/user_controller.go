@@ -24,6 +24,17 @@ func CreateUser(c *gin.Context) {
 		c.JSON(restErr.StatusCode, restErr)
 		return
 	}
+
+	ok, errString := user.IsUserValid()
+	if !ok {
+		c.JSON(http.StatusBadRequest, error.RestError{
+			Message:    "Mandatory fields are not present in the request",
+			StatusCode: http.StatusBadRequest,
+			Error:      errString,
+		})
+		return
+	}
+
 	newUser, err := service.CreateUser(&user)
 	if err != nil {
 		c.JSON(err.StatusCode, err)

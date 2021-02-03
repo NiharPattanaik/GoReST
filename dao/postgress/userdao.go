@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/NiharPattanaik/GoReST/datasource/postgress"
 	"github.com/NiharPattanaik/GoReST/error"
@@ -11,9 +12,10 @@ import (
 )
 
 const (
-	createUSerQry   = "INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL, DATE_CREATED, DATE_UPDATED) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD/MM/YYYY'), to_char(DATE_UPDATED, 'DD/MM/YYYY');"
-	getUserQry      = "SELECT ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD/MM/YYYY'), to_char(DATE_UPDATED, 'DD/MM/YYYY') FROM USERS WHERE ID = $1"
-	getUsersListQry = "SELECT ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD/MM/YYYY'), to_char(DATE_UPDATED, 'DD/MM/YYYY') FROM USERS"
+	createUSerQry   = "INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL, DATE_CREATED, DATE_UPDATED) VALUES ($1, $2, $3, NOW(), NOW()) RETURNING ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD-MM-YYYY'), to_char(DATE_UPDATED, 'DD-MM-YYYY');"
+	getUserQry      = "SELECT ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD-MM-YYYY'), to_char(DATE_UPDATED, 'DD-MM-YYYY') FROM USERS WHERE ID = $1"
+	getUsersListQry = "SELECT ID,FIRST_NAME, LAST_NAME, EMAIL, to_char(DATE_CREATED, 'DD-MM-YYYY'), to_char(DATE_UPDATED, 'DD-MM-YYYY') FROM USERS"
+	noResultErrMsg  = "no rows in result set"
 )
 
 func CreateUser(user *model.User) (*model.User, *error.RestError) {
@@ -33,7 +35,13 @@ func CreateUser(user *model.User) (*model.User, *error.RestError) {
 func GetUser(userId int64) (*model.User, *error.RestError) {
 	var user model.User
 	err := postgress.DBPool.QueryRow(context.Background(), getUserQry, userId).Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.DateUpdated)
-	if err != nil {
+	if err != nil && strings.Contains(err.Error(), noResultErrMsg) {
+		return nil, &error.RestError{
+			Message:    fmt.Sprintf("No user found having user Id : %d", userId),
+			StatusCode: http.StatusNotFound,
+			Error:      err.Error(),
+		}
+	} else {
 		return nil, &error.RestError{
 			Message:    fmt.Sprintf("Could not retrieve the user details for user having Id : %d", userId),
 			StatusCode: http.StatusInternalServerError,
@@ -67,6 +75,12 @@ func GetUsersList() (*[]model.User, *error.RestError) {
 		}
 		users = append(users, user)
 	}
-
+	if len(users) == 0 {
+		return nil, &error.RestError{
+			Message:    "No users found",
+			StatusCode: http.StatusNotFound,
+			Error:      "Users not found",
+		}
+	}
 	return &users, nil
 }
