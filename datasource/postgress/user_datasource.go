@@ -8,7 +8,7 @@ import (
 
 var (
 	DBPool      *pgxpool.Pool
-	databaseURL = "postgres://niharpattanaik:welcome123@localhost/mydb?sslmode=disable"
+	databaseURL = "postgres://postgres:postgres@localhost/mydb?sslmode=disable"
 )
 
 func init() {

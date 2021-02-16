@@ -1,19 +1,41 @@
 package service
 
 import (
-	"github.com/NiharPattanaik/GoReST/dao/postgress"
+	"github.com/NiharPattanaik/GoReST/dao"
 	"github.com/NiharPattanaik/GoReST/error"
 	"github.com/NiharPattanaik/GoReST/model"
 )
 
-func GetUser(userID int64) (*model.User, *error.RestError) {
-	return postgress.GetUser(userID)
+var (
+	UserServiceInterface IUserServiceInterface
+)
+
+func init() {
+	UserServiceInterface = &UserService{}
 }
 
-func CreateUser(user *model.User) (*model.User, *error.RestError) {
-	return postgress.CreateUser(user)
+type IUserServiceInterface interface {
+	GetUser(int64) (*model.User, *error.RestError)
+	CreateUser(*model.User) (*model.User, *error.RestError)
+	GetUsersList() (*[]model.User, *error.RestError)
+	UpdateUser(int64, model.User) (*model.User, *error.RestError)
 }
 
-func GetUsersList() (*[]model.User, *error.RestError) {
-	return postgress.GetUsersList()
+type UserService struct {
+}
+
+func (u *UserService) GetUser(userID int64) (*model.User, *error.RestError) {
+	return dao.PGUserDAOInterface.GetUser(userID)
+}
+
+func (u *UserService) CreateUser(user *model.User) (*model.User, *error.RestError) {
+	return dao.PGUserDAOInterface.CreateUser(user)
+}
+
+func (u *UserService) GetUsersList() (*[]model.User, *error.RestError) {
+	return dao.PGUserDAOInterface.GetUsersList()
+}
+
+func (u *UserService) UpdateUser(userId int64, user model.User) (*model.User, *error.RestError) {
+	return dao.PGUserDAOInterface.UpdateUser(userId, user)
 }
